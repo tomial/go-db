@@ -9,7 +9,7 @@ import (
 
 func Run() {
 	for {
-		fmt.Print("> ")
+		fmt.Print("db > ")
 
 		reader := bufio.NewReader(os.Stdin)
 
