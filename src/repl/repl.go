@@ -19,12 +19,26 @@ func Run() {
 		}
 
 		// \n was included in reader.ReadString
-		op := strings.TrimSuffix(str, "\n")
+		// TODO Handle complex invalid input
+		str = strings.TrimSpace(str)
 
-		if op == ".exit" {
-			os.Exit(0)
+		ib := inputBuffer{args: strings.Split(str, " ")}
+
+		op := ib.args[0]
+		if len(op) == 0 {
+			continue
+		}
+		if op[0] == '.' {
+			executeMetaCmd(&ib)
 		} else {
-			fmt.Printf("Unrecognized operation: %s\n", op)
+			stm := statement{}
+			prepareStatus := prepareStm(&ib, &stm)
+			if prepareStatus == PrepareStatementFailed {
+				fmt.Printf("Failed to prepare statement: %v\n", ib.args)
+				continue
+			}
+			stm.Execute()
+			fmt.Println("Executed")
 		}
 	}
 }
