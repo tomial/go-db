@@ -38,7 +38,6 @@ func Run() {
 				continue
 			}
 			stm.Execute()
-			fmt.Println("Executed")
 		}
 	}
 }

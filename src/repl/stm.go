@@ -1,6 +1,12 @@
 package repl
 
-import "strings"
+import (
+	"db/src/storage"
+	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+)
 
 type StatementType int
 type PrepareStatementStatus int
@@ -20,19 +26,67 @@ type statement struct {
 	typ  StatementType
 	op   string
 	args []string
+	row  storage.Row
 }
 
 func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
 	stm.op = ib.args[0]
-	stm.args = ib.args[1:]
+	stm.args = ib.args
 	switch strings.ToLower(stm.op) {
 	case "insert":
 		{
+			// TODO Creating table struct with code automatically
+			// TODO Support generic rows
 			stm.typ = StatementTypeInsert
+
+			row := storage.UserRow{}
+			val := reflect.ValueOf(&row).Elem()
+
+			// fill args into row fields
+			for i := 0; i < val.NumField(); i++ {
+				field := val.Field(i)
+				arg := stm.args[i]
+
+				if field.Kind() != reflect.Struct {
+					if field.CanSet() {
+						switch field.Kind() {
+						case reflect.String:
+							{
+								field.SetString(arg)
+							}
+						case reflect.Uint64:
+							{
+								num, err := strconv.ParseUint(arg, 10, 64)
+								if err != nil {
+									fmt.Println("Prepare statement: Failed to convert arg to uint64")
+									return PrepareStatementFailed
+								}
+								field.SetUint(num)
+							}
+						case reflect.Int64:
+							{
+								num, err := strconv.ParseInt(arg, 10, 64)
+								if err != nil {
+									fmt.Println("Prepare statement: Failed to convert arg to int64")
+									return PrepareStatementFailed
+								}
+								field.SetInt(num)
+							}
+						default:
+							{
+								fmt.Printf("Prepare statement: Not supported type: %v", field.Kind())
+								return PrepareStatementFailed
+							}
+						}
+					}
+				}
+			}
+			stm.row = &row
 		}
 	case "select":
 		{
 			stm.typ = StatementTypeSelect
+			stm.row = &storage.UserRow{}
 		}
 	default:
 		{
@@ -40,13 +94,46 @@ func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
 		}
 	}
 
-	if stm.typ == StatementTypeInvalid {
-		return PrepareStatementFailed
-	} else {
-		return PrepareStatementSuccess
-	}
+	return PrepareStatementSuccess
 }
 
 func (stm *statement) Execute() {
+	switch stm.typ {
+	case StatementTypeSelect:
+		{
+			runSelect(stm)
+		}
+	case StatementTypeInsert:
+		{
+			runInsert(stm)
+		}
+	case StatementTypeInvalid:
+		{
+			fmt.Println("Execute statement error: Invalid statement type")
+		}
+	default:
+		{
+			fmt.Printf("Execute statement error: Unhandled statement type: %v\n", stm.typ)
+		}
+	}
+}
 
+func runSelect(stm *statement) {
+	index, err := strconv.ParseUint(stm.args[1], 10, 64)
+	if err != nil {
+		fmt.Printf("Failed to run select, error parsing row index: %s\n", err)
+	}
+	err = stm.row.Load(uint(index))
+	if err != nil {
+		fmt.Printf("Failed to run select, error loading data: %s\n", err)
+	}
+}
+
+func runInsert(stm *statement) {
+	n, err := stm.row.Save()
+	if err != nil {
+		fmt.Printf("Failed to run insert: %s", err.Error())
+		return
+	}
+	fmt.Printf("Inserted %d bytes to table %s\n", n, stm.row.Table())
 }
