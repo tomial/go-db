@@ -1,37 +1,29 @@
 package storage
 
 import (
-	"encoding/binary"
+	"db/src/datatype"
 	"errors"
 	"fmt"
 	"io"
+	"log"
+	"os"
 )
 
-type table struct {
-	name    string
-	page    pager
-	rowNum  uint
-	rowSize uint
+type Table struct {
+	Name    string
+	Page    Pager
+	RowNum  uint
+	RowSize uint
 }
 
-const dataTypeStringSize uint = 255
-const dataTypeInt64Size uint = binary.MaxVarintLen64
-const dataTypeUint64Size uint = binary.MaxVarintLen64
-
-var dataTypeSize = map[string]uint{
-	"string": dataTypeStringSize,
-	"int":    dataTypeInt64Size,
-	"uint":   dataTypeUint64Size,
-}
-
-func (t *table) persist(data []byte) error {
-	writePos := t.rowNum * t.rowSize
-	if writePos+t.rowSize > pageSize {
+func (t *Table) Persist(data []byte, slot uint) error {
+	writePos := slot * t.RowSize
+	if writePos+t.RowSize > pageSize {
 		return errors.New("persisting data: page full")
 	}
-	t.page.file.Seek(int64(writePos), io.SeekStart)
+	t.Page.File.Seek(int64(writePos), io.SeekStart)
 
-	_, err := t.page.file.Write(data)
+	_, err := t.Page.File.Write(data)
 	if err != nil {
 		return err
 	} else {
@@ -39,22 +31,44 @@ func (t *table) persist(data []byte) error {
 	}
 }
 
-func (t *table) load(index uint) ([]byte, error) {
+func (t *Table) Load(index uint) ([]byte, error) {
 	if index == 0 {
-		index = 1
+		return nil, errors.New("loading data: invalid index 0")
 	}
-	loadPos := (index - 1) * t.rowSize
-	if loadPos+t.rowSize > pageSize {
+	loadPos := (index - 1) * t.RowSize
+	if loadPos+t.RowSize > pageSize {
 		return nil, errors.New("loading data: no data left to be loaded")
 	}
 
-	buf := make([]byte, t.rowSize)
+	buf := make([]byte, t.RowSize)
 
-	t.page.file.Seek(int64(loadPos), io.SeekStart)
-	_, err := t.page.file.Read(buf)
+	t.Page.File.Seek(int64(loadPos), io.SeekStart)
+	_, err := t.Page.File.Read(buf)
 	if err != nil {
 		return nil, fmt.Errorf("loading data: failed to read from database file --- %s", err.Error())
 	}
 
 	return buf, nil
+}
+
+func InitTable(name string) *Table {
+	file, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+	if err != nil {
+		log.Fatalf("Initializing table: failed to open database file %s -- %s", dbFileName, err)
+	}
+	fstat, err := file.Stat()
+	if err != nil {
+		log.Fatalf("Initializing table: failed to read database file stat %s -- %s", dbFileName, err)
+	}
+	rowSize := datatype.StringSize + datatype.StringSize + datatype.Uint64Size
+	return &Table{
+		Name:    name,
+		Page:    Pager{File: file},
+		RowNum:  uint(fstat.Size()) / rowSize,
+		RowSize: rowSize,
+	}
+}
+
+func (t *Table) String() string {
+	return t.Name
 }

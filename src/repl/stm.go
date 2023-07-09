@@ -1,7 +1,7 @@
 package repl
 
 import (
-	"db/src/storage"
+	"db/src/row"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -26,7 +26,7 @@ type statement struct {
 	typ  StatementType
 	op   string
 	args []string
-	row  storage.Row
+	row  row.Row
 }
 
 func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
@@ -39,7 +39,7 @@ func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
 			// TODO Support generic rows
 			stm.typ = StatementTypeInsert
 
-			row := storage.UserRow{}
+			row := row.UserRow{}
 			val := reflect.ValueOf(&row).Elem()
 
 			// fill args into row fields
@@ -86,7 +86,9 @@ func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
 	case "select":
 		{
 			stm.typ = StatementTypeSelect
-			stm.row = &storage.UserRow{}
+			row := &row.UserRow{}
+			row.TableName = "User"
+			stm.row = row
 		}
 	default:
 		{
@@ -123,17 +125,19 @@ func runSelect(stm *statement) {
 	if err != nil {
 		fmt.Printf("Failed to run select, error parsing row index: %s\n", err)
 	}
-	err = stm.row.Load(uint(index))
+	stm.row.InitCursor(uint(index))
+	err = stm.row.Load()
 	if err != nil {
 		fmt.Printf("Failed to run select, error loading data: %s\n", err)
 	}
 }
 
 func runInsert(stm *statement) {
-	n, err := stm.row.Save()
+	index, err := strconv.ParseUint(stm.args[1], 10, 64)
+	n, err := stm.row.Save(uint(index))
 	if err != nil {
 		fmt.Printf("Failed to run insert: %s", err.Error())
 		return
 	}
-	fmt.Printf("Inserted %d bytes to table %s\n", n, stm.row.Table())
+	fmt.Printf("Inserted %d bytes to table %s\n", n, stm.row.Table().String())
 }

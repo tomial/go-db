@@ -1,11 +1,13 @@
-package storage
+package row
 
 import (
+	"db/src/datatype"
 	"encoding/binary"
 	"errors"
 	"reflect"
 )
 
+// TODO return when data count not equal to col num
 func serialize(row Row, columnSize uint) (data []byte, err error) {
 	val := reflect.ValueOf(row)
 
@@ -20,17 +22,17 @@ func serialize(row Row, columnSize uint) (data []byte, err error) {
 			case reflect.Uint64:
 				{
 					binary.PutUvarint(buf, val.Elem().Field(i).Uint())
-					pos += dataTypeUint64Size
+					pos += datatype.Uint64Size
 				}
 			case reflect.Int64:
 				{
 					binary.PutVarint(buf, val.Elem().Field(i).Int())
-					pos += dataTypeUint64Size
+					pos += datatype.Uint64Size
 				}
 			case reflect.String:
 				{
 					copy(buf[pos:pos+255], []byte(val.Elem().Field(i).String()))
-					pos += dataTypeStringSize
+					pos += datatype.StringSize
 				}
 			}
 		}
@@ -52,26 +54,26 @@ func deserialize(data []byte, tableType reflect.Type) (Row, error) {
 			switch fieldType {
 			case reflect.Uint64:
 				{
-					udigit, n := binary.Uvarint(data[pos : pos+dataTypeUint64Size])
+					udigit, n := binary.Uvarint(data[pos : pos+datatype.Uint64Size])
 					if n <= 0 {
 						return nil, errors.New("deserializing data: invalid size byte slice, too small or too large")
 					}
 					row.Elem().Field(i).SetUint(udigit)
-					pos += dataTypeUint64Size
+					pos += datatype.Uint64Size
 				}
 			case reflect.Int64:
 				{
-					digit, n := binary.Varint(data[pos : pos+dataTypeUint64Size])
+					digit, n := binary.Varint(data[pos : pos+datatype.Uint64Size])
 					if n <= 0 {
 						return nil, errors.New("deserializing data: invalid size byte slice, too small or too large")
 					}
 					row.Elem().Field(i).SetInt(digit)
-					pos += dataTypeInt64Size
+					pos += datatype.Int64Size
 				}
 			case reflect.String:
 				{
-					row.Elem().Field(i).SetString(string(data[pos : pos+dataTypeStringSize]))
-					pos += dataTypeStringSize
+					row.Elem().Field(i).SetString(string(data[pos : pos+datatype.StringSize]))
+					pos += datatype.StringSize
 				}
 			}
 		}
