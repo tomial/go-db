@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"db/src/constants"
 	"db/src/datatype"
 	"errors"
 	"fmt"
@@ -18,7 +19,7 @@ type Table struct {
 
 func (t *Table) Persist(data []byte, slot uint) error {
 	writePos := slot * t.RowSize
-	if writePos+t.RowSize > pageSize {
+	if writePos+t.RowSize > constants.PageSize {
 		return errors.New("persisting data: page full")
 	}
 	t.Page.File.Seek(int64(writePos), io.SeekStart)
@@ -36,7 +37,7 @@ func (t *Table) Load(index uint) ([]byte, error) {
 		return nil, errors.New("loading data: invalid index 0")
 	}
 	loadPos := (index - 1) * t.RowSize
-	if loadPos+t.RowSize > pageSize {
+	if loadPos+t.RowSize > constants.PageSize {
 		return nil, errors.New("loading data: no data left to be loaded")
 	}
 
@@ -52,13 +53,13 @@ func (t *Table) Load(index uint) ([]byte, error) {
 }
 
 func InitTable(name string) *Table {
-	file, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+	file, err := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
 	if err != nil {
-		log.Fatalf("Initializing table: failed to open database file %s -- %s", dbFileName, err)
+		log.Fatalf("Initializing table: failed to open database file %s -- %s", constants.DbFileName, err)
 	}
 	fstat, err := file.Stat()
 	if err != nil {
-		log.Fatalf("Initializing table: failed to read database file stat %s -- %s", dbFileName, err)
+		log.Fatalf("Initializing table: failed to read database file stat %s -- %s", constants.DbFileName, err)
 	}
 	rowSize := datatype.StringSize + datatype.StringSize + datatype.Uint64Size
 	return &Table{
