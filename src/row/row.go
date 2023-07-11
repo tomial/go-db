@@ -5,10 +5,10 @@ import (
 )
 
 type Row interface {
-	Save(index uint) (n int, err error)
+	Save(index uint32) (n int, err error)
 	Load() (err error)
 	Table() *storage.Table
-	InitCursor(index uint)
+	InitCursor(index uint32)
 }
 
 type emptyRow struct {
@@ -17,7 +17,7 @@ type emptyRow struct {
 	TableName string
 }
 
-func (row *emptyRow) InitCursor(index uint) {
+func (row *emptyRow) InitCursor(index uint32) {
 	t := storage.InitTable(row.TableName)
 	row.Cursor = &cursor{
 		table:      t,

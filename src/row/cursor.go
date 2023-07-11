@@ -5,7 +5,7 @@ import "db/src/storage"
 type cursor struct {
 	table      *storage.Table
 	isEnd      bool
-	currentRow uint
+	currentRow uint32
 }
 
 // Move to start
@@ -18,7 +18,7 @@ func (c *cursor) tableEnd() {
 	c.currentRow = c.table.RowNum
 }
 
-func (c *cursor) currentPos() uint {
+func (c *cursor) currentPos() uint32 {
 	return c.currentRow
 }
 

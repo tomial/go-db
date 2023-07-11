@@ -13,11 +13,11 @@ import (
 type Table struct {
 	Name    string
 	Page    Pager
-	RowNum  uint
-	RowSize uint
+	RowNum  uint32
+	RowSize uint32
 }
 
-func (t *Table) Persist(data []byte, slot uint) error {
+func (t *Table) Persist(data []byte, slot uint32) error {
 	writePos := slot * t.RowSize
 	if writePos > constants.PageSize {
 		return errors.New("persisting data: page full")
@@ -32,7 +32,7 @@ func (t *Table) Persist(data []byte, slot uint) error {
 	}
 }
 
-func (t *Table) Load(index uint) ([]byte, error) {
+func (t *Table) Load(index uint32) ([]byte, error) {
 	if index == 0 {
 		return nil, errors.New("loading data: invalid index 0")
 	}
@@ -65,7 +65,7 @@ func InitTable(name string) *Table {
 	return &Table{
 		Name:    name,
 		Page:    Pager{File: file},
-		RowNum:  uint(fstat.Size()) / rowSize,
+		RowNum:  uint32(fstat.Size()) / rowSize,
 		RowSize: rowSize,
 	}
 }

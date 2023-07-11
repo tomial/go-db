@@ -13,7 +13,7 @@ type UserRow struct {
 	Email    string
 }
 
-func (row *UserRow) Save(index uint) (n int, err error) {
+func (row *UserRow) Save(index uint32) (n int, err error) {
 	bytes, err := serialize(row, datatype.Uint64Size+2*datatype.StringSize)
 	if err != nil {
 		return 0, err

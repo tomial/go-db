@@ -8,11 +8,11 @@ import (
 )
 
 // TODO return when data count not equal to col num
-func serialize(row Row, columnSize uint) (data []byte, err error) {
+func serialize(row Row, columnSize uint32) (data []byte, err error) {
 	val := reflect.ValueOf(row)
 
 	buf := make([]byte, columnSize)
-	var pos uint = 0
+	var pos uint32 = 0
 
 	for i := 0; i < val.Elem().NumField(); i++ {
 		fieldType := val.Elem().Field(i).Kind()
@@ -44,7 +44,7 @@ func serialize(row Row, columnSize uint) (data []byte, err error) {
 func deserialize(data []byte, tableType reflect.Type) (Row, error) {
 	row := reflect.New(tableType)
 
-	var pos uint = 0
+	var pos uint32 = 0
 
 	for i := 0; i < tableType.NumField(); i++ {
 

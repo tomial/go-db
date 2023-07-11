@@ -125,7 +125,7 @@ func runSelect(stm *statement) {
 	if err != nil {
 		fmt.Printf("Failed to run select, error parsing row index: %s\n", err)
 	}
-	stm.row.InitCursor(uint(index))
+	stm.row.InitCursor(uint32(index))
 	err = stm.row.Load()
 	if err != nil {
 		fmt.Printf("Failed to run select, error loading data: %s\n", err)
@@ -134,7 +134,7 @@ func runSelect(stm *statement) {
 
 func runInsert(stm *statement) {
 	index, err := strconv.ParseUint(stm.args[1], 10, 64)
-	n, err := stm.row.Save(uint(index))
+	n, err := stm.row.Save(uint32(index))
 	if err != nil {
 		fmt.Printf("Failed to run insert: %s", err.Error())
 		return
