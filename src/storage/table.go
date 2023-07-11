@@ -19,7 +19,7 @@ type Table struct {
 
 func (t *Table) Persist(data []byte, slot uint) error {
 	writePos := slot * t.RowSize
-	if writePos+t.RowSize > constants.PageSize {
+	if writePos > constants.PageSize {
 		return errors.New("persisting data: page full")
 	}
 	t.Page.File.Seek(int64(writePos), io.SeekStart)
