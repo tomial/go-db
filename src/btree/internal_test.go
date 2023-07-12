@@ -13,7 +13,7 @@ func TestInternalNodeCellSize(t *testing.T) {
 
 func TestMaxInternalNodeNumCell(t *testing.T) {
 	size := maxInternalNodeNumCell()
-	// 4082 / 12 == 340
+	// 4080 / 12 == 340
 	// limited amount
 	expected := 2
 	if size != uint32(expected) {

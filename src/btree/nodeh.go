@@ -33,10 +33,12 @@ const (
 type nodeHeader struct {
 	// Headers: 10B
 	Typ      NodeType // 1B
-	Parent   PageNum  // 4B Pointer to parent node (read actual struct with PageNum)
-	Next     PageNum  // 4B Pointer to next leaf node (-1(nil) for internal node)
-	CellSize uint32   // 4B Size of node cell, The cell size of leaf node depends on what table(row) it stores
-	NumCell  uint8    // 1B Amount of cells(cell content : internal - pointer to child, leaf - data)
+	Empty    bool
+	Parent   PageNum // 4B Pointer to parent node (read actual struct with PageNum)
+	Next     PageNum // 4B Pointer to next leaf node (-1(nil) for internal node)
+	CellSize uint32  // 4B Size of node cell, The cell size of leaf node depends on what table(row) it stores
+	Height   uint8
+	NumCell  uint8 // 1B Amount of cells(cell content : internal - pointer to child, leaf - data)
 }
 
 func nodeHeaderSize() uint32 {
