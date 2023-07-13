@@ -1,6 +1,7 @@
 package btree
 
 import (
+	"db/src/pager"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -27,6 +28,7 @@ type BTree struct {
 	Root    PageNum // Root node's page num
 	First   PageNum // Leftmost leaf node, for iteration
 	NumNode uint32
+	pager   *pager.Pager
 }
 
 func NewBtree(file *os.File) *BTree {
@@ -35,8 +37,8 @@ func NewBtree(file *os.File) *BTree {
 		log.Fatalf(("New btree: failed to get db file stat -- %s\n"), err.Error())
 	}
 	file.Seek(0, io.SeekStart)
-	bt := &BTree{Root: 0, First: 0, NumNode: 0} // No root and first node
-	if fstat.Size() == 0 {                      // New file
+	bt := &BTree{Root: 0, First: 0, NumNode: 0, pager: pager.Init()} // No root and first node
+	if fstat.Size() == 0 {                                           // New file
 		bin := bt.serialize()
 		_, err := file.Write(bin)
 		if err != nil {
@@ -59,7 +61,10 @@ func (bt *BTree) structSize() uint {
 	num := elem.NumField()
 	var total uint = 0
 	for i := 0; i < num; i++ {
-		total += uint(elem.Field(i).Type().Size())
+		field := elem.Field(i)
+		if field.Type().Kind() == reflect.Uint32 {
+			total += uint(field.Type().Size())
+		}
 	}
 	return total
 }
@@ -71,8 +76,12 @@ func (bt *BTree) serialize() []byte {
 	num := elem.NumField()
 	pos := 0
 	for i := 0; i < num; i++ {
-		binary.LittleEndian.PutUint32(buf[pos:], uint32(elem.Field(i).Uint()))
-		pos += 4
+		field := elem.Field(i)
+		// don't serialize pointers
+		if field.Type().Kind() == reflect.Uint32 {
+			binary.LittleEndian.PutUint32(buf[pos:], uint32(elem.Field(i).Uint()))
+			pos += 4
+		}
 	}
 	return buf
 }
@@ -83,7 +92,8 @@ func (bt *BTree) deserialize(bin []byte) error {
 		return fmt.Errorf("deserializing btree: wrong btree size %d, expected %d", binSize, bt.structSize())
 	} else {
 		bt.Root = PageNum(binary.LittleEndian.Uint32(bin[:4]))
-		bt.First = PageNum(binary.LittleEndian.Uint32(bin[4:]))
+		bt.First = PageNum(binary.LittleEndian.Uint32(bin[4:8]))
+		bt.NumNode = binary.LittleEndian.Uint32(bin[8:])
 		return nil
 	}
 }
@@ -96,7 +106,9 @@ func Insert(key key, data []byte, typ NodeType) {
 
 }
 
-func Search(key key) {}
+func (bt *BTree) Search(key key) {
+	// page := bt.pager.ReadPage(uint32(bt.Root))
+}
 
 func FullScan() {}
 

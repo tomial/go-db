@@ -1,6 +1,10 @@
 package btree
 
-import "testing"
+import (
+	"db/src/constants"
+	"encoding/hex"
+	"testing"
+)
 
 func TestInternalNodeCellSize(t *testing.T) {
 	in := &InternalNode{}
@@ -13,10 +17,18 @@ func TestInternalNodeCellSize(t *testing.T) {
 
 func TestMaxInternalNodeNumCell(t *testing.T) {
 	size := maxInternalNodeNumCell()
-	// 4080 / 12 == 340
-	// limited amount
+	// body size / internal node size == 340
+	// limited amount here, 340 is too large
 	expected := 2
 	if size != uint32(expected) {
 		t.Fatalf("Wrong internal node cell size: %d, expected %d", size, expected)
+	}
+}
+
+func TestMakeInternalNodeEmptyPage(t *testing.T) {
+	buf := makeNodePage(constants.MagicNumberInternal)
+	magicNumberStr := hex.EncodeToString(buf[:constants.MagicNumberSize])
+	if magicNumberStr != constants.MagicNumberInternal || magicNumberStr == constants.MagicNumberLeaf {
+		t.Fatalf("Failed to make leaf page: %s, expected %s\n", magicNumberStr, constants.MagicNumberInternal)
 	}
 }

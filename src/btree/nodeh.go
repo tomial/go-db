@@ -53,7 +53,6 @@ func nodeHeaderSize() uint32 {
 	return size
 }
 
-// 4082
 func nodeBodySize() uint32 {
-	return uint32(constants.PageSize) - nodeHeaderSize()
+	return uint32(constants.PageSize) - nodeHeaderSize() - constants.MagicNumberSize
 }

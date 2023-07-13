@@ -12,7 +12,7 @@ func TestNodeHeaderSize(t *testing.T) {
 
 func TestNodeBodySize(t *testing.T) {
 	size := nodeBodySize()
-	var expected uint32 = 4080
+	var expected uint32 = 4078
 	if size != expected {
 		t.Fatalf("Wrong node body size: %d, expected %d", size, expected)
 	}

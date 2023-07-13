@@ -1,6 +1,8 @@
 package btree
 
 import (
+	"db/src/constants"
+	"encoding/hex"
 	"testing"
 )
 
@@ -27,7 +29,7 @@ func TestBTreeSerialization(t *testing.T) {
 	var expectedRoot PageNum = 123
 	var expectedFirst PageNum = 321
 	var expectedNumNode uint32 = 111
-	if bt.Root != expectedRoot && bt.First != expectedFirst && bt.NumNode != expectedNumNode {
+	if bt.Root != expectedRoot || bt.First != expectedFirst || bt.NumNode != expectedNumNode {
 		t.Errorf("Serialize btree: Wrong root %d and first %d, expected %d and %d\n", bt.Root, bt.First, expectedRoot, expectedFirst)
 	}
 }
@@ -38,5 +40,13 @@ func TestBTreeDeserializationError(t *testing.T) {
 	err := bt.deserialize(bin)
 	if err != nil {
 		t.Error("Deserialize btree: failed to capture error")
+	}
+}
+
+func TestMakeTreeNodeEmptyPage(t *testing.T) {
+	buf := makeNodePage(constants.MagicNumberTree)
+	magicNumberStr := hex.EncodeToString(buf[:constants.MagicNumberSize])
+	if magicNumberStr != constants.MagicNumberTree || magicNumberStr == constants.MagicNumberLeaf {
+		t.Fatalf("Failed to make leaf page: %s, expected %s\n", magicNumberStr, constants.MagicNumberTree)
 	}
 }
