@@ -3,16 +3,15 @@ package storage
 import (
 	"db/src/constants"
 	"db/src/datatype"
+	"db/src/pager"
 	"errors"
 	"fmt"
 	"io"
-	"log"
-	"os"
 )
 
 type Table struct {
 	Name    string
-	Page    Pager
+	Page    *pager.Pager
 	RowNum  uint32
 	RowSize uint32
 }
@@ -53,19 +52,12 @@ func (t *Table) Load(index uint32) ([]byte, error) {
 }
 
 func InitTable(name string) *Table {
-	file, err := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
-	if err != nil {
-		log.Fatalf("Initializing table: failed to open database file %s -- %s", constants.DbFileName, err)
-	}
-	fstat, err := file.Stat()
-	if err != nil {
-		log.Fatalf("Initializing table: failed to read database file stat %s -- %s", constants.DbFileName, err)
-	}
 	rowSize := datatype.StringSize + datatype.StringSize + datatype.Uint64Size
+	pager := pager.Init()
 	return &Table{
 		Name:    name,
-		Page:    Pager{File: file},
-		RowNum:  uint32(fstat.Size()) / rowSize,
+		Page:    pager,
+		RowNum:  uint32(pager.Fstat().Size()) / rowSize,
 		RowSize: rowSize,
 	}
 }
