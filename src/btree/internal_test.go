@@ -6,12 +6,16 @@ import (
 	"testing"
 )
 
+func initInternalNode() *InternalNode {
+	return &InternalNode{Header: initNodeHeader()}
+}
+
 func TestInternalNodeCellSize(t *testing.T) {
-	in := &InternalNode{}
-	in.CellSize = internalNodeCellSize()
+	in := initInternalNode()
+	in.Header.CellSize = internalNodeCellSize()
 	expected := 12
-	if in.CellSize != uint32(expected) {
-		t.Fatalf("Wrong internal node cell size: %d, expected %d", in.CellSize, expected)
+	if in.Header.CellSize != uint32(expected) {
+		t.Fatalf("Wrong internal node cell size: %d, expected %d", in.Header.CellSize, expected)
 	}
 }
 

@@ -10,8 +10,8 @@ type internalCell struct {
 
 // internal node
 type InternalNode struct {
-	nodeHeader
-	children []internalCell
+	Header   *nodeHeader
+	children []*internalCell
 }
 
 // The cell size of internal node is fixed

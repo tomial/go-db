@@ -30,7 +30,7 @@ func TestBTreeSerialization(t *testing.T) {
 	var expectedFirst PageNum = 321
 	var expectedNumNode uint32 = 111
 	if bt.Root != expectedRoot || bt.First != expectedFirst || bt.NumNode != expectedNumNode {
-		t.Errorf("Serialize btree: Wrong root %d and first %d, expected %d and %d\n", bt.Root, bt.First, expectedRoot, expectedFirst)
+		t.Errorf("Serialize btree: Wrong root %d and first %d numNode %d, expected %d and %d and %d\n", bt.Root, bt.First, bt.NumNode, expectedRoot, expectedFirst, expectedNumNode)
 	}
 }
 

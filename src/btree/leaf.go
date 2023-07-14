@@ -2,7 +2,11 @@ package btree
 
 import (
 	"db/src/constants"
+	"db/src/util"
 	"encoding/binary"
+	"errors"
+	"fmt"
+	"log"
 )
 
 type leafCell struct {
@@ -12,16 +16,16 @@ type leafCell struct {
 
 // leaf node
 type LeafNode struct {
-	nodeHeader
-	Cells []leafCell
+	Header *nodeHeader
+	Cells  []*leafCell
 }
 
 func (ln *LeafNode) maxLeafNodeNumCell() uint32 {
-	return nodeBodySize() / ln.CellSize
+	return nodeBodySize() / ln.Header.CellSize
 }
 
-func (ln *LeafNode) setCellSize(dataSize uint32) {
-	ln.CellSize = constants.BTreeKeySize + dataSize
+func (ln *LeafNode) SetCellSize(dataSize uint32) {
+	ln.Header.CellSize = constants.BTreeKeySize + dataSize
 }
 
 // Find the entry in leaf node
@@ -48,26 +52,66 @@ func (ln *LeafNode) insert(key key, data []byte) {
 
 func (ln *LeafNode) serialize() []byte {
 	page := makeNodePage(constants.MagicNumberLeaf)
-	copy(page[constants.MagicNumberSize:], ln.serializeCells())
+
+	pos := constants.MagicNumberSize // nodes are put after 2 bytes of magic number
+
+	headerBytes := ln.Header.serialize()
+	copy(page[pos:pos+nodeHeaderSize()], headerBytes)
+	pos = util.AdvanceCursor(pos, nodeHeaderSize())
+
+	cellsBytes, err := ln.serializeCells()
+	copy(page[pos:pos+nodeBodySize()], cellsBytes)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	return page
 }
 
-func (ln *LeafNode) serializeCells() []byte {
+func (ln *LeafNode) serializeCells() ([]byte, error) {
 	cells := ln.Cells
-	dataSize := len(cells) * int(ln.CellSize)
+	if len(cells) == 0 || ln.Header.CellSize == 0 {
+		return nil, errors.New("serializing leaf node: empty leaf node or cell size not set")
+	}
+	dataSize := len(cells) * int(ln.Header.CellSize)
 	buf := make([]byte, dataSize)
 	pos := 0
 
 	for _, cell := range cells {
 		binary.LittleEndian.PutUint32(buf[pos:], uint32(cell.key))
-		pos += constants.BTreeKeySize
+		pos = util.AdvanceCursor(pos, constants.BTreeKeySize)
 		copy(buf[pos:], cell.data)
-		pos += len(cell.data)
+		pos = util.AdvanceCursor(pos, len(cell.data))
 	}
 
-	return buf
+	return buf, nil
 }
 
-func deserialize([]byte) *LeafNode {
+func (ln *LeafNode) deserializeCells(bytes []byte) error {
+	if len(bytes) != int(ln.Header.CellSize)*int(ln.Header.NumCell) {
+		return fmt.Errorf("deserializing leaf node cell: invalid data length -- found %d, expected %d", ln.Header.CellSize, ln.Header.NumCell)
+	}
+
+	cells := make([]*leafCell, ln.Header.NumCell)
+
+	var pos uint32 = 0
+	for i := 0; i < int(ln.Header.NumCell); i++ {
+		cells[i] = &leafCell{
+			key:  key(binary.LittleEndian.Uint32(bytes[pos : pos+constants.BTreeKeySize])),
+			data: bytes[pos+constants.BTreeKeySize : pos+ln.Header.CellSize],
+		}
+		pos = util.AdvanceCursor(pos, ln.Header.CellSize)
+	}
+	return nil
+}
+
+func (ln *LeafNode) deserialize(bytes []byte) error {
+	if len(bytes) != int(constants.PageSize) {
+		return fmt.Errorf("deserializing leaf node: invalid bytes size -- %d, expected %d", len(bytes), constants.PageSize)
+	}
+	pos := constants.MagicNumberSize
+	ln.Header.deserialize(bytes[pos : pos+nodeHeaderSize()])
+	pos = util.AdvanceCursor(pos, nodeHeaderSize())
+	ln.deserializeCells(bytes[pos:])
 	return nil
 }

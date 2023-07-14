@@ -2,6 +2,7 @@ package btree
 
 import (
 	"db/src/pager"
+	"db/src/util"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -80,7 +81,7 @@ func (bt *BTree) serialize() []byte {
 		// don't serialize pointers
 		if field.Type().Kind() == reflect.Uint32 {
 			binary.LittleEndian.PutUint32(buf[pos:], uint32(elem.Field(i).Uint()))
-			pos += 4
+			pos = util.AdvanceCursor(pos, 4)
 		}
 	}
 	return buf

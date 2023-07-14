@@ -8,6 +8,9 @@ import (
 
 type node interface {
 	serialize() []byte
+	deserialize(bytes []byte) error
+	serializeCells() ([]byte, error)
+	deserializeCells(bytes []byte) error
 }
 
 func makeNodePage(magicNumberStr string) []byte {
