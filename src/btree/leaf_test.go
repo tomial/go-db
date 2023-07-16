@@ -1,6 +1,7 @@
 package btree
 
 import (
+	"bytes"
 	"db/src/constants"
 	"db/src/storage"
 	"db/src/util"
@@ -45,6 +46,7 @@ func initLeafNode() *LeafNode {
 	testBytes := make([]byte, 520)
 	testBytes[0] = 0xAB
 	testBytes[1] = 0xCD
+	ln.Header.NumCell = 3
 	ln.Cells = []*leafCell{
 		{
 			key:  1,
@@ -91,17 +93,25 @@ func TestSerializeLeafCells(t *testing.T) {
 
 func TestLeafNodeSerialization(t *testing.T) {
 	ln := initLeafNode()
-	bytes := ln.serialize()
+	bin := ln.serialize()
 	ln1 := &LeafNode{
 		Header: &nodeHeader{},
 	}
-	ln1.deserialize(bytes)
+	err := ln1.deserialize(bin)
+	if err != nil {
+		t.Error(err)
+	}
+
 	if ln.Header.Typ != ln1.Header.Typ ||
 		ln.Header.Height != ln1.Header.Height ||
 		ln.Header.Next != ln1.Header.Next ||
 		ln.Header.NumCell != ln1.Header.NumCell ||
 		ln.Header.Parent != ln1.Header.Parent ||
-		ln.Header.CellSize != ln1.Header.CellSize {
+		ln.Header.CellSize != ln1.Header.CellSize ||
+		ln.Cells[0].key != ln1.Cells[0].key ||
+		ln.Cells[1].key != ln1.Cells[1].key ||
+		ln.Cells[2].key != ln1.Cells[2].key ||
+		bytes.Equal(ln.Cells[0].data, ln1.Cells[0].data) {
 		t.Fatal("Testing leaf node serialization: cannot serialize and deserialize leaf node correctly")
 	}
 }

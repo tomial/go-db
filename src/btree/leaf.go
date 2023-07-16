@@ -4,6 +4,7 @@ import (
 	"db/src/constants"
 	"db/src/util"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -88,17 +89,19 @@ func (ln *LeafNode) serializeCells() ([]byte, error) {
 }
 
 func (ln *LeafNode) deserializeCells(bytes []byte) error {
-	if len(bytes) != int(ln.Header.CellSize)*int(ln.Header.NumCell) {
+	if len(bytes) < int(ln.Header.CellSize)*int(ln.Header.NumCell) {
 		return fmt.Errorf("deserializing leaf node cell: invalid data length -- found %d, expected %d", ln.Header.CellSize, ln.Header.NumCell)
 	}
 
-	cells := make([]*leafCell, ln.Header.NumCell)
+	ln.Cells = make([]*leafCell, ln.Header.NumCell)
 
 	var pos uint32 = 0
 	for i := 0; i < int(ln.Header.NumCell); i++ {
-		cells[i] = &leafCell{
+		data := make([]byte, ln.Header.CellSize)
+		copy(data, bytes[pos+constants.BTreeKeySize:pos+ln.Header.CellSize])
+		ln.Cells[i] = &leafCell{
 			key:  key(binary.LittleEndian.Uint32(bytes[pos : pos+constants.BTreeKeySize])),
-			data: bytes[pos+constants.BTreeKeySize : pos+ln.Header.CellSize],
+			data: data,
 		}
 		pos = util.AdvanceCursor(pos, ln.Header.CellSize)
 	}
@@ -109,9 +112,16 @@ func (ln *LeafNode) deserialize(bytes []byte) error {
 	if len(bytes) != int(constants.PageSize) {
 		return fmt.Errorf("deserializing leaf node: invalid bytes size -- %d, expected %d", len(bytes), constants.PageSize)
 	}
+	magicNumber := hex.EncodeToString(bytes[:constants.MagicNumberSize])
+	if magicNumber != constants.MagicNumberLeaf {
+		return fmt.Errorf("deserializing leaf node: invalid magic number for leaf node -- %s, expected %s", magicNumber, constants.MagicNumberLeaf)
+	}
 	pos := constants.MagicNumberSize
 	ln.Header.deserialize(bytes[pos : pos+nodeHeaderSize()])
 	pos = util.AdvanceCursor(pos, nodeHeaderSize())
-	ln.deserializeCells(bytes[pos:])
+	err := ln.deserializeCells(bytes[pos : pos+ln.Header.CellSize*uint32(ln.Header.NumCell)])
+	if err != nil {
+		return err
+	}
 	return nil
 }

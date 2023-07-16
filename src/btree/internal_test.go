@@ -7,7 +7,23 @@ import (
 )
 
 func initInternalNode() *InternalNode {
-	return &InternalNode{Header: initNodeHeader()}
+	in := &InternalNode{Header: initNodeHeader()}
+	in.Header.NumCell = 2
+	in.Header.Typ = TypeInternal
+	in.Header.CellSize = internalNodeCellSize()
+	in.Cells = []*internalCell{
+		{
+			key:   2,
+			left:  3,
+			right: 4,
+		},
+		{
+			key:   5,
+			left:  6,
+			right: 7,
+		},
+	}
+	return in
 }
 
 func TestInternalNodeCellSize(t *testing.T) {
@@ -34,5 +50,56 @@ func TestMakeInternalNodeEmptyPage(t *testing.T) {
 	magicNumberStr := hex.EncodeToString(buf[:constants.MagicNumberSize])
 	if magicNumberStr != constants.MagicNumberInternal || magicNumberStr == constants.MagicNumberLeaf {
 		t.Fatalf("Failed to make leaf page: %s, expected %s\n", magicNumberStr, constants.MagicNumberInternal)
+	}
+}
+
+func TestInternalNodeSerializeCells(t *testing.T) {
+	in := initInternalNode()
+	in.Cells = []*internalCell{
+		{
+			key:   2,
+			left:  3,
+			right: 4,
+		},
+		{
+			key:   5,
+			left:  6,
+			right: 7,
+		},
+	}
+	cellsBytes, err := in.serializeCells()
+	if err != nil {
+		t.Error(err)
+	}
+
+	in.Cells = nil
+	in.deserializeCells(cellsBytes)
+	if in.Cells[0].key != 2 || in.Cells[0].left != 3 || in.Cells[0].right != 4 ||
+		in.Cells[1].key != 5 || in.Cells[1].left != 6 || in.Cells[1].right != 7 {
+		t.Error("Failed to serialize and deserialize internal node cells")
+	}
+}
+
+func TestInternalNodeSerialization(t *testing.T) {
+	in := initInternalNode()
+	bytes := in.serialize()
+	in1 := &InternalNode{Header: &nodeHeader{}}
+	err := in1.deserialize(bytes)
+	if err != nil {
+		t.Error(err)
+	}
+	if in.Header.Typ != in1.Header.Typ ||
+		in.Header.Height != in1.Header.Height ||
+		in.Header.Next != in1.Header.Next ||
+		in.Header.NumCell != in1.Header.NumCell ||
+		in.Header.Parent != in1.Header.Parent ||
+		in.Header.CellSize != in1.Header.CellSize ||
+		in.Cells[0].key != in1.Cells[0].key ||
+		in.Cells[0].left != in1.Cells[0].left ||
+		in.Cells[0].right != in1.Cells[0].right ||
+		in.Cells[1].key != in1.Cells[1].key ||
+		in.Cells[1].left != in1.Cells[1].left ||
+		in.Cells[1].right != in1.Cells[1].right {
+		t.Fatal("Testing internal node serialization: cannot serialize and deserialize internal node correctly")
 	}
 }
