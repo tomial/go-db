@@ -8,7 +8,7 @@ import (
 
 func initInternalNode() *InternalNode {
 	in := &InternalNode{Header: initNodeHeader()}
-	in.Header.NumCell = 2
+	in.Header.NumCell = 3
 	in.Header.Typ = TypeInternal
 	in.Header.CellSize = internalNodeCellSize()
 	in.Cells = []*internalCell{
@@ -19,8 +19,13 @@ func initInternalNode() *InternalNode {
 		},
 		{
 			key:   5,
+			left:  4,
+			right: 6,
+		},
+		{
+			key:   7,
 			left:  6,
-			right: 7,
+			right: 8,
 		},
 	}
 	return in
@@ -39,7 +44,7 @@ func TestMaxInternalNodeNumCell(t *testing.T) {
 	size := maxInternalNodeNumCell()
 	// body size / internal node size == 340
 	// limited amount here, 340 is too large
-	expected := 2
+	expected := 3
 	if size != uint32(expected) {
 		t.Fatalf("Wrong internal node cell size: %d, expected %d", size, expected)
 	}
@@ -63,8 +68,13 @@ func TestInternalNodeSerializeCells(t *testing.T) {
 		},
 		{
 			key:   5,
+			left:  4,
+			right: 6,
+		},
+		{
+			key:   7,
 			left:  6,
-			right: 7,
+			right: 8,
 		},
 	}
 	cellsBytes, err := in.serializeCells()
@@ -75,7 +85,7 @@ func TestInternalNodeSerializeCells(t *testing.T) {
 	in.Cells = nil
 	in.deserializeCells(cellsBytes)
 	if in.Cells[0].key != 2 || in.Cells[0].left != 3 || in.Cells[0].right != 4 ||
-		in.Cells[1].key != 5 || in.Cells[1].left != 6 || in.Cells[1].right != 7 {
+		in.Cells[1].key != 5 || in.Cells[1].left != 4 || in.Cells[1].right != 6 {
 		t.Error("Failed to serialize and deserialize internal node cells")
 	}
 }

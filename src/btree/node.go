@@ -11,7 +11,15 @@ type node interface {
 	deserialize(bytes []byte) error
 	serializeCells() ([]byte, error)
 	deserializeCells(bytes []byte) error
+	find(key key) (found bool, data []byte)
 }
+
+const (
+	TypeInternal NodeType = iota
+	TypeLeaf
+	TypeRoot
+	TypeInvalid
+)
 
 func makeNodePage(magicNumberStr string) []byte {
 	buf := make([]byte, constants.PageSize)

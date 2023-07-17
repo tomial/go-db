@@ -21,6 +21,10 @@ type LeafNode struct {
 	Cells  []*leafCell
 }
 
+func initEmptyLeafNode() *LeafNode {
+	return &LeafNode{Header: initHeader(TypeLeaf)}
+}
+
 func (ln *LeafNode) maxLeafNodeNumCell() uint32 {
 	return nodeBodySize() / ln.Header.CellSize
 }
@@ -30,17 +34,17 @@ func (ln *LeafNode) SetCellSize(dataSize uint32) {
 }
 
 // Find the entry in leaf node
-func (ln *LeafNode) find(key key) int {
+func (ln *LeafNode) find(key key) (found bool, data []byte) {
 	if len(ln.Cells) == 0 {
-		return -1
+		return false, nil
 	} else {
-		for index, cell := range ln.Cells {
+		for _, cell := range ln.Cells {
 			if key == cell.key {
-				return index
+				return true, cell.data
 			}
 		}
 	}
-	return -1
+	return false, nil
 }
 
 func (ln *LeafNode) split() {

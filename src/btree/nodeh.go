@@ -10,14 +10,14 @@ import (
 
 // A simple b plus tree implementation
 // order 8 example :
-//                                      ┌──┬──┬──┬──┐
-//                                      │02│--│--│--│
-//                                      ├──┼──┼──┼──┼──┐
-//                          ┌───────────┤LR│LR│LR│LR│N-│
-//                          │           └─┬┴──┴──┴──┴──┘
-//                          │             │
-//                          ▼             │
-//                         ┌──┬──┬──┬──┐  └──────────►┌──┬──┬──┬──┐
+//                                      ┌────┬──┬──┬──┐
+//                                      │ 02 │--│--│--│
+//                                      ├─┐──┼──┼──┼──┼──┐
+//                          ┌───────────┤L|RL| R│LR│LR│N-│
+//                          │           └─┴─┬┴──┴──┴──┴──┘
+//                          │               │
+//                          ▼               │
+//                         ┌──┬──┬──┬──┐    └────────►┌──┬──┬──┬──┐
 //                         │01│--│--│--│              │02│03│--│--│
 //                         ├──┼──┼──┼──┼──┐           ├──┼──┼──┼──┼──┐
 //                         │D │D │D │D │N ├──────────►│D │D │D │D │N-│
@@ -25,12 +25,6 @@ import (
 
 type NodeType uint8
 type PageNum uint32
-
-const (
-	TypeInternal NodeType = iota
-	TypeLeaf
-	TypeRoot
-)
 
 // Common fields of leaf and internal node
 type nodeHeader struct {
@@ -41,6 +35,17 @@ type nodeHeader struct {
 	CellSize uint32   // 4B Size of node cell, The cell size of leaf node depends on what table(row) it stores
 	Height   uint8
 	NumCell  uint8 // 1B Amount of cells(cell content : internal - pointer to child, leaf - data)
+}
+
+func initHeader(typ NodeType) *nodeHeader {
+	return &nodeHeader{
+		Typ:      typ,
+		Parent:   0,
+		Next:     0,
+		CellSize: 0,
+		Height:   0,
+		NumCell:  0,
+	}
 }
 
 func nodeHeaderSize() uint32 {

@@ -19,8 +19,13 @@ type internalCell struct {
 
 // internal node
 type InternalNode struct {
+	btree  *BTree
 	Header *nodeHeader
 	Cells  []*internalCell
+}
+
+func initEmptyInternalNode() *LeafNode {
+	return &LeafNode{Header: initHeader(TypeInternal)}
 }
 
 // The cell size of internal node is fixed
@@ -41,7 +46,21 @@ func maxInternalNodeNumCell() uint32 {
 	// returns 340, that's 680 children for an internal, too many for testing
 	// return nodeBodySize() / internalNodeCellSize()
 	// limit the children size, 4 children per node
-	return 2
+	return 3
+}
+
+func (in *InternalNode) find(key key) (found bool, data []byte) {
+	for index, cell := range in.Cells {
+		// The last cell
+		if index == len(in.Cells)-1 && key >= cell.key {
+			return in.btree.readNode(cell.right).find(key)
+		}
+
+		if cell.key >= key {
+			return in.btree.readNode(cell.left).find(key)
+		}
+	}
+	return false, nil
 }
 
 func (in *InternalNode) serialize() []byte {
@@ -129,4 +148,15 @@ func (in *InternalNode) deserializeCells(bytes []byte) error {
 	}
 
 	return nil
+}
+
+func (in *InternalNode) syncNeighborPointer(index int) {
+	// Sync if there's a right cell
+	if len(in.Cells) > index {
+		in.Cells[index+1].left = in.Cells[index].right
+	}
+	// Sync the left cell
+	if index > 0 {
+		in.Cells[index-1].right = in.Cells[index].left
+	}
 }

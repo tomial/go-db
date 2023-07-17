@@ -1,9 +1,11 @@
 package btree
 
 import (
+	"db/src/constants"
 	"db/src/pager"
 	"db/src/util"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -107,10 +109,64 @@ func Insert(key key, data []byte, typ NodeType) {
 
 }
 
-func (bt *BTree) Search(key key) {
-	// page := bt.pager.ReadPage(uint32(bt.Root))
+func (bt *BTree) Search(key key) (found bool, data []byte) {
+	page := bt.pager.ReadPage(uint32(bt.Root))
+	switch nodeType(page) {
+	case TypeLeaf:
+		{
+			ln := initEmptyLeafNode()
+			ln.deserialize(page)
+			return ln.find(key)
+		}
+	case TypeInternal:
+		{
+			in := initEmptyInternalNode()
+			in.deserialize(page)
+			return in.find(key)
+		}
+	}
+	return false, nil
 }
+
+func (bt *BTree) Delete(key key) {}
 
 func FullScan() {}
 
-func Delete(key key) {}
+func nodeType(page []byte) NodeType {
+	switch hex.EncodeToString(page[:constants.MagicNumberSize]) {
+	case constants.MagicNumberLeaf:
+		{
+			return TypeLeaf
+		}
+	case constants.MagicNumberInternal:
+		{
+			return TypeInternal
+		}
+	default:
+		{
+			return TypeInvalid
+		}
+	}
+}
+
+func (bt *BTree) readNode(page PageNum) node {
+	bytes := bt.pager.ReadPage(uint32(page))
+	switch nodeType(bytes) {
+	case TypeLeaf:
+		{
+			ln := initEmptyLeafNode()
+			ln.deserialize(bytes)
+			return ln
+		}
+	case TypeInternal:
+		{
+			in := initEmptyInternalNode()
+			in.deserialize(bytes)
+			return in
+		}
+	default:
+		{
+			return nil
+		}
+	}
+}
