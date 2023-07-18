@@ -104,6 +104,7 @@ func TestInternalNodeSerialization(t *testing.T) {
 		in.Header.NumCell != in1.Header.NumCell ||
 		in.Header.Parent != in1.Header.Parent ||
 		in.Header.CellSize != in1.Header.CellSize ||
+		in.Header.Page != in1.Header.Page ||
 		in.Cells[0].key != in1.Cells[0].key ||
 		in.Cells[0].left != in1.Cells[0].left ||
 		in.Cells[0].right != in1.Cells[0].right ||

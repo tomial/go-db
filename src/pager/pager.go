@@ -11,12 +11,7 @@ type Pager struct {
 	File *os.File
 }
 
-func Init() *Pager {
-	file, err := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		log.Fatalf("Pager: failed to open database file %s -- %s", constants.DbFileName, err)
-	}
-
+func Init(file *os.File) *Pager {
 	return &Pager{File: file}
 }
 

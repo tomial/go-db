@@ -3,6 +3,8 @@ package btree
 import (
 	"db/src/constants"
 	"encoding/hex"
+	"fmt"
+	"os"
 	"testing"
 )
 
@@ -36,8 +38,8 @@ func TestBTreeSerialization(t *testing.T) {
 
 func TestBTreeDeserializationError(t *testing.T) {
 	bt := &BTree{}
-	bin := make([]byte, 12) // random binary
-	err := bt.deserialize(bin)
+	page := makeNodePage(constants.MagicNumberTree)
+	err := bt.deserialize(page)
 	if err != nil {
 		t.Error("Deserialize btree: failed to capture error")
 	}
@@ -48,5 +50,58 @@ func TestMakeTreeNodeEmptyPage(t *testing.T) {
 	magicNumberStr := hex.EncodeToString(buf[:constants.MagicNumberSize])
 	if magicNumberStr != constants.MagicNumberTree || magicNumberStr == constants.MagicNumberLeaf {
 		t.Fatalf("Failed to make leaf page: %s, expected %s\n", magicNumberStr, constants.MagicNumberTree)
+	}
+}
+
+func TestInsertIntoEmptyTree(t *testing.T) {
+	err := os.Remove("./my.db")
+	if err != nil {
+		t.Error(err)
+	}
+	bt := NewBtree()
+	defer bt.pager.File.Close()
+	buf := make([]byte, 520)
+	copy(buf, "Hello World Insert")
+	bt.Insert(1, buf)
+
+	bt2 := NewBtree()
+	bt2.deserialize(bt.pager.ReadPage(0))
+	file, err := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fstat, err := file.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectedFileSize := 2 * int64(constants.PageSize)
+	if fstat.Size() != expectedFileSize {
+		t.Fatalf("BTree: Failed to create root node and save it to file correctly -- found size %d, expected %d", fstat.Size(), expectedFileSize)
+	}
+
+	if bt.First != bt2.First || bt.NumNode != bt2.NumNode || bt.Root != bt2.Root {
+		t.Fatalf("BTree: Failed to deserialize tree metadata")
+	}
+
+	ln := initEmptyLeafNode()
+	ln.deserialize(bt.pager.ReadPage(1))
+	if ln.Cells[0].key != 1 || string(ln.Cells[0].data[:18]) != "Hello World Insert" {
+		t.Fatalf("BTree: Failed to insert data")
+	}
+}
+
+func TestInsertAndSplit(t *testing.T) {
+	os.Remove("my.db")
+	bt := NewBtree()
+	buf := make([]byte, 520)
+	for i := 1; i <= 17; i++ {
+		str := fmt.Sprintf("Hello World Insert %d", i)
+		copy(buf, str)
+		bt.Insert(key(i), buf)
+		bt.reload()
+	}
+
+	if bt.NumNode != 8 {
+		t.Errorf("Failed to insert and split correctly, found num node %d, expected %d", bt.NumNode, 8)
 	}
 }

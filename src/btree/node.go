@@ -12,6 +12,8 @@ type node interface {
 	serializeCells() ([]byte, error)
 	deserializeCells(bytes []byte) error
 	find(key key) (found bool, data []byte)
+	saveCell(key key, data []byte)
+	searchLeaf(key key) *LeafNode
 }
 
 const (

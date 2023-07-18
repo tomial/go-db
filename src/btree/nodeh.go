@@ -28,11 +28,12 @@ type PageNum uint32
 
 // Common fields of leaf and internal node
 type nodeHeader struct {
-	// Headers: 15B
+	// Headers: 19B
 	Typ      NodeType // 1B
 	Parent   PageNum  // 4B Pointer to parent node (read actual struct with PageNum)
 	Next     PageNum  // 4B Pointer to next leaf node (page 0 is tree struct, used as nil here)
-	CellSize uint32   // 4B Size of node cell, The cell size of leaf node depends on what table(row) it stores
+	Page     PageNum
+	CellSize uint32 // 4B Size of node cell, The cell size of leaf node depends on what table(row) it stores
 	Height   uint8
 	NumCell  uint8 // 1B Amount of cells(cell content : internal - pointer to child, leaf - data)
 }
@@ -42,6 +43,7 @@ func initHeader(typ NodeType) *nodeHeader {
 		Typ:      typ,
 		Parent:   0,
 		Next:     0,
+		Page:     0,
 		CellSize: 0,
 		Height:   0,
 		NumCell:  0,
@@ -99,6 +101,8 @@ func (header *nodeHeader) deserialize(bytes []byte) error {
 	header.Parent = PageNum(binary.LittleEndian.Uint32(bytes[pos : pos+4]))
 	pos = util.AdvanceCursor(pos, 4)
 	header.Next = PageNum(binary.LittleEndian.Uint32(bytes[pos : pos+4]))
+	pos = util.AdvanceCursor(pos, 4)
+	header.Page = PageNum(binary.LittleEndian.Uint32(bytes[pos : pos+4]))
 	pos = util.AdvanceCursor(pos, 4)
 	header.CellSize = binary.LittleEndian.Uint32(bytes[pos : pos+4])
 	pos = util.AdvanceCursor(pos, 4)

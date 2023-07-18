@@ -53,7 +53,7 @@ func (t *Table) Load(index uint32) ([]byte, error) {
 
 func InitTable(name string) *Table {
 	rowSize := datatype.StringSize + datatype.StringSize + datatype.Uint64Size
-	pager := pager.Init()
+	pager := pager.Init(nil)
 	return &Table{
 		Name:    name,
 		Page:    pager,

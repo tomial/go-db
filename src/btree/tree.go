@@ -34,26 +34,33 @@ type BTree struct {
 	pager   *pager.Pager
 }
 
-func NewBtree(file *os.File) *BTree {
+func NewBtree() *BTree {
+	file, err := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		log.Fatalf("BTree: failed to open database file %s -- %s", constants.DbFileName, err)
+	}
 	fstat, err := file.Stat()
 	if err != nil {
 		log.Fatalf(("New btree: failed to get db file stat -- %s\n"), err.Error())
 	}
 	file.Seek(0, io.SeekStart)
-	bt := &BTree{Root: 0, First: 0, NumNode: 0, pager: pager.Init()} // No root and first node
-	if fstat.Size() == 0 {                                           // New file
+	bt := &BTree{Root: 0, First: 0, NumNode: 0, pager: pager.Init(file)} // No root and first node
+	if fstat.Size() == 0 {                                               // New file
 		bin := bt.serialize()
 		_, err := file.Write(bin)
 		if err != nil {
 			log.Fatalf("Creating btree: failed to write btree binary to db file -- %s", err.Error())
 		}
 	} else { // Existing file
-		bin := make([]byte, bt.structSize())
+		bin := make([]byte, constants.PageSize)
 		_, err := file.Read(bin)
 		if err != nil {
 			log.Fatalf("Creating btree: failed to read from db file -- %s", err.Error())
 		}
-		bt.deserialize(bin)
+		err = bt.deserialize(bin)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	return bt
 }
@@ -86,30 +93,62 @@ func (bt *BTree) serialize() []byte {
 			pos = util.AdvanceCursor(pos, 4)
 		}
 	}
-	return buf
+	treePage := makeNodePage(constants.MagicNumberTree)
+	copy(treePage[constants.MagicNumberSize:], buf)
+	return treePage
 }
 
-func (bt *BTree) deserialize(bin []byte) error {
-	binSize := len(bin)
-	if binSize != int(bt.structSize()) {
-		return fmt.Errorf("deserializing btree: wrong btree size %d, expected %d", binSize, bt.structSize())
+func (bt *BTree) deserialize(page []byte) error {
+	pageSize := len(page)
+	if pageSize != int(constants.PageSize) {
+		return fmt.Errorf("deserializing btree: wrong btree page size %d, expected %d", pageSize, constants.PageSize)
 	} else {
-		bt.Root = PageNum(binary.LittleEndian.Uint32(bin[:4]))
-		bt.First = PageNum(binary.LittleEndian.Uint32(bin[4:8]))
-		bt.NumNode = binary.LittleEndian.Uint32(bin[8:])
+		data := page[constants.MagicNumberSize:]
+		bt.Root = PageNum(binary.LittleEndian.Uint32(data[:4]))
+		bt.First = PageNum(binary.LittleEndian.Uint32(data[4:8]))
+		bt.NumNode = binary.LittleEndian.Uint32(data[8:])
 		return nil
 	}
 }
 
-// TODO Draw the whole tree
-func Visualize() {}
+func (bt *BTree) Insert(key key, data []byte) {
+	// Empty Tree
+	// Create a root node to page 1 and insert
+	if bt.Root == 0 {
+		root := createRootNode(data)
+		root.saveCell(key, data)
+		bt.Root = 1
+		bt.NumNode += 1
+		bt.First = 1
+		bt.save()
+	} else {
+		// find the leaf node and insert it
+		ln := bt.searchLeaf(key)
+		if ln == nil {
+			log.Fatalln("BTree insert: failed to find leaf node to insert")
+		}
+		// If the node split, the original page would be changed
+		ln.saveCell(key, data)
+	}
+}
 
-// TODO Search pos
-func Insert(key key, data []byte, typ NodeType) {
+func (bt *BTree) searchLeaf(key key) *LeafNode {
+	node := bt.readNode(bt.Root)
+	return node.searchLeaf(key)
+}
 
+func createRootNode(data []byte) *LeafNode {
+	ln := initEmptyRootNode()
+	ln.SetCellSize(uint32(len(data)))
+	ln.Cells = make([]*leafCell, ln.maxLeafNodeNumCell())
+	ln.Header.Page = 1
+	return ln
 }
 
 func (bt *BTree) Search(key key) (found bool, data []byte) {
+	if bt.NumNode == 0 {
+		return false, nil
+	}
 	page := bt.pager.ReadPage(uint32(bt.Root))
 	switch nodeType(page) {
 	case TypeLeaf:
@@ -133,7 +172,8 @@ func (bt *BTree) Delete(key key) {}
 func FullScan() {}
 
 func nodeType(page []byte) NodeType {
-	switch hex.EncodeToString(page[:constants.MagicNumberSize]) {
+	typ := hex.EncodeToString(page[:constants.MagicNumberSize])
+	switch typ {
 	case constants.MagicNumberLeaf:
 		{
 			return TypeLeaf
@@ -155,13 +195,19 @@ func (bt *BTree) readNode(page PageNum) node {
 	case TypeLeaf:
 		{
 			ln := initEmptyLeafNode()
-			ln.deserialize(bytes)
+			err := ln.deserialize(bytes)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return ln
 		}
 	case TypeInternal:
 		{
 			in := initEmptyInternalNode()
-			in.deserialize(bytes)
+			err := in.deserialize(bytes)
+			if err != nil {
+				log.Fatal(err)
+			}
 			return in
 		}
 	default:
@@ -170,3 +216,28 @@ func (bt *BTree) readNode(page PageNum) node {
 		}
 	}
 }
+
+// save tree metadata
+func (bt *BTree) save() {
+	bytes := bt.serialize()
+	bt.pager.WritePage(0, bytes)
+}
+
+func loadTree() *BTree {
+	return nil
+}
+
+func (bt *BTree) reload() {
+	if bt.pager.File == nil {
+		file, err := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE, 0755)
+		if err != nil {
+			log.Fatalf("reloading btree: failed to open database file %s -- %s", constants.DbFileName, err)
+		}
+		bt.pager.File = file
+	}
+	bytes := bt.pager.ReadPage(0)
+	bt.deserialize(bytes)
+}
+
+// TODO Draw the whole tree
+func Visualize() {}

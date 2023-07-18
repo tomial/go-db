@@ -3,11 +3,13 @@ package pager
 import (
 	"db/src/constants"
 	"io"
+	"os"
 	"testing"
 )
 
 func TestWritePage(t *testing.T) {
-	pager := Init()
+	file, _ := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE, 0755)
+	pager := Init(file)
 
 	buf := make([]byte, constants.PageSize)
 	buf[0] = 0xAB
@@ -32,7 +34,8 @@ func TestWritePage(t *testing.T) {
 }
 
 func TestReadPage(t *testing.T) {
-	pager := Init()
+	file, _ := os.OpenFile(constants.DbFileName, os.O_RDWR|os.O_CREATE, 0755)
+	pager := Init(file)
 	data := pager.ReadPage(0)
 	if data[0] != 0xAB || data[1] != 0xCD {
 		t.Fatalf("Pager: failed to read certain page")
