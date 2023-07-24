@@ -46,6 +46,9 @@ func (ln *LeafNode) find(key key) (found bool, data []byte) {
 		return false, nil
 	} else {
 		for _, cell := range ln.Cells {
+			if cell == nil {
+				return false, nil
+			}
 			if key == cell.key {
 				return true, cell.data
 			}
