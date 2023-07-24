@@ -2,7 +2,6 @@ package btree
 
 import (
 	"db/src/constants"
-	"db/src/storage"
 	"db/src/util"
 	"encoding/binary"
 	"encoding/hex"
@@ -11,8 +10,7 @@ import (
 
 func TestLeafNodeCellSize(t *testing.T) {
 	ln := initLeafNode()
-	table := storage.Table{RowSize: 520}
-	ln.SetCellSize(table.RowSize)
+	ln.SetCellSize(520)
 	size := ln.Header.CellSize
 	expected := 524 // key + table row size
 	if size != uint32(expected) {
@@ -22,8 +20,7 @@ func TestLeafNodeCellSize(t *testing.T) {
 
 func TestMaxLeafNodeNumCell(t *testing.T) {
 	lf := initLeafNode()
-	table := storage.Table{RowSize: 520}
-	lf.SetCellSize(table.RowSize)
+	lf.SetCellSize(520)
 	maxNum := lf.maxLeafNodeNumCell()
 	expected := 7
 	if maxNum != uint32(expected) {

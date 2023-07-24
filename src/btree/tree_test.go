@@ -97,13 +97,13 @@ func TestInsertAndSplit(t *testing.T) {
 	for i := 1; i <= 17; i++ {
 		str := fmt.Sprintf("Hello World Insert %d", i)
 		copy(buf, str)
-		bt.Insert(key(i), buf)
+		bt.Insert(uint32(i), buf)
 		bt.reload()
 	}
 
 	buf = make([]byte, 520)
 	copy(buf, "Insert duplicate key 12")
-	bt.Insert(key(12), buf)
+	bt.Insert(12, buf)
 	bt.reload()
 
 	if bt.NumNode != 8 || bt.Root != 8 {

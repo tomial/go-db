@@ -52,9 +52,12 @@ func maxInternalNodeNumCell() uint32 {
 }
 
 func (in *InternalNode) find(key key) (found bool, data []byte) {
+	if in.btree == nil {
+		in.btree = NewBtree()
+	}
 	for index, cell := range in.Cells {
 		// The last cell
-		if index == len(in.Cells)-1 && key >= cell.key {
+		if index == int(in.Header.NumCell)-1 && key >= cell.key {
 			return in.btree.readNode(cell.right).find(key)
 		}
 

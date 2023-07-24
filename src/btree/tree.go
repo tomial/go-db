@@ -103,24 +103,24 @@ func (bt *BTree) deserialize(page []byte) error {
 	}
 }
 
-func (bt *BTree) Insert(key key, data []byte) {
+func (bt *BTree) Insert(index uint32, data []byte) {
 	// Empty Tree
 	// Create a root node to page 1 and insert
 	if bt.Root == 0 {
 		root := createRootNode(data)
-		root.saveCell(key, data)
+		root.saveCell(key(index), data)
 		bt.Root = 1
 		bt.NumNode += 1
 		bt.First = 1
 		bt.save()
 	} else {
 		// find the leaf node and insert it
-		ln := bt.searchLeaf(key)
+		ln := bt.searchLeaf(key(index))
 		if ln == nil {
 			log.Fatalln("BTree insert: failed to find leaf node to insert")
 		}
 		// If the node split, the original page would be changed
-		ln.saveCell(key, data)
+		ln.saveCell(key(index), data)
 	}
 }
 
@@ -137,7 +137,7 @@ func createRootNode(data []byte) *LeafNode {
 	return ln
 }
 
-func (bt *BTree) Search(key key) (found bool, data []byte) {
+func (bt *BTree) Search(index uint32) (found bool, data []byte) {
 	if bt.NumNode == 0 {
 		return false, nil
 	}
@@ -147,13 +147,13 @@ func (bt *BTree) Search(key key) (found bool, data []byte) {
 		{
 			ln := initEmptyLeafNode()
 			ln.deserialize(page)
-			return ln.find(key)
+			return ln.find(key(index))
 		}
 	case TypeInternal:
 		{
 			in := initEmptyInternalNode()
 			in.deserialize(page)
-			return in.find(key)
+			return in.find(key(index))
 		}
 	}
 	return false, nil
