@@ -101,7 +101,12 @@ func TestInsertAndSplit(t *testing.T) {
 		bt.reload()
 	}
 
-	if bt.NumNode != 8 {
-		t.Errorf("Failed to insert and split correctly, found num node %d, expected %d", bt.NumNode, 8)
+	buf = make([]byte, 520)
+	copy(buf, "Insert duplicate key 12")
+	bt.Insert(key(12), buf)
+	bt.reload()
+
+	if bt.NumNode != 8 || bt.Root != 8 {
+		t.Errorf("Failed to insert and split correctly, found num node %d, expected %d; found root %d, expected %d", bt.NumNode, 8, bt.Root, 8)
 	}
 }
