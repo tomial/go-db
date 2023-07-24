@@ -52,15 +52,7 @@ func NewBtree() *BTree {
 			log.Fatalf("Creating btree: failed to write btree binary to db file -- %s", err.Error())
 		}
 	} else { // Existing file
-		bin := make([]byte, constants.PageSize)
-		_, err := file.Read(bin)
-		if err != nil {
-			log.Fatalf("Creating btree: failed to read from db file -- %s", err.Error())
-		}
-		err = bt.deserialize(bin)
-		if err != nil {
-			log.Fatal(err)
-		}
+		bt.loadTree()
 	}
 	return bt
 }
@@ -223,8 +215,16 @@ func (bt *BTree) save() {
 	bt.pager.WritePage(0, bytes)
 }
 
-func loadTree() *BTree {
-	return nil
+func (bt *BTree) loadTree() {
+	bin := make([]byte, constants.PageSize)
+	_, err := bt.pager.File.Read(bin)
+	if err != nil {
+		log.Fatalf("Creating btree: failed to read from db file -- %s", err.Error())
+	}
+	err = bt.deserialize(bin)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (bt *BTree) reload() {
