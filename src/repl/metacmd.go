@@ -1,7 +1,7 @@
 package repl
 
 import (
-	"fmt"
+	"log"
 	"os"
 )
 
@@ -57,10 +57,10 @@ func executeMetaCmd(ib *inputBuffer) {
 
 	switch metacmd.result {
 	case MetaCmdResultFailed:
-		fmt.Printf("Failed to execute meta command: %v\n", metacmd.str)
+		log.Printf("Failed to execute meta command: %v\n", metacmd.str)
 	case MetaCmdResultUnrecognized:
-		fmt.Printf("Failed to recognize meta command: %v\n", metacmd.str)
+		log.Printf("Failed to recognize meta command: %v\n", metacmd.str)
 	default:
-		fmt.Printf("Unhandled meta command result: %v", metacmd.result)
+		log.Printf("Unhandled meta command result: %v", metacmd.result)
 	}
 }

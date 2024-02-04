@@ -26,7 +26,7 @@ func (t *Table) Load(key uint32) ([]byte, error) {
 	if found {
 		return data, nil
 	} else {
-		return nil, fmt.Errorf("loading table: key %d not found", key)
+		return nil, fmt.Errorf("error loading table: key %d not found", key)
 	}
 }
 

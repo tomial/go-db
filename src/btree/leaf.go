@@ -211,9 +211,12 @@ func (ln *LeafNode) deserialize(bytes []byte) error {
 		return fmt.Errorf("deserializing leaf node: invalid magic number for leaf node -- %s, expected %s", magicNumber, constants.MagicNumberLeaf)
 	}
 	pos := constants.MagicNumberSize
-	ln.Header.deserialize(bytes[pos : pos+nodeHeaderSize()])
+	err := ln.Header.deserialize(bytes[pos : pos+nodeHeaderSize()])
+	if err != nil {
+		return err
+	}
 	pos = util.AdvanceCursor(pos, nodeHeaderSize())
-	err := ln.deserializeCells(bytes[pos : pos+ln.Header.CellSize*uint32(ln.Header.NumCell)])
+	err = ln.deserializeCells(bytes[pos : pos+ln.Header.CellSize*uint32(ln.Header.NumCell)])
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,7 @@ package repl
 
 import (
 	"db/src/row"
-	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -42,6 +42,10 @@ func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
 			row := row.UserRow{}
 			val := reflect.ValueOf(&row).Elem()
 
+			if len(stm.args) != val.NumField() {
+				log.Printf("Prepare statement: Incorrect argument amount, expected %d, found %d\n", len(stm.args), val.NumField())
+				return PrepareStatementFailed
+			}
 			// fill args into row fields
 			for i := 0; i < val.NumField(); i++ {
 				field := val.Field(i)
@@ -58,7 +62,7 @@ func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
 							{
 								num, err := strconv.ParseUint(arg, 10, 64)
 								if err != nil {
-									fmt.Println("Prepare statement: Failed to convert arg to uint64")
+									log.Println("Prepare statement: Failed to convert arg to uint64")
 									return PrepareStatementFailed
 								}
 								field.SetUint(num)
@@ -67,14 +71,14 @@ func prepareStm(ib *inputBuffer, stm *statement) PrepareStatementStatus {
 							{
 								num, err := strconv.ParseInt(arg, 10, 64)
 								if err != nil {
-									fmt.Println("Prepare statement: Failed to convert arg to int64")
+									log.Println("Prepare statement: Failed to convert arg to int64")
 									return PrepareStatementFailed
 								}
 								field.SetInt(num)
 							}
 						default:
 							{
-								fmt.Printf("Prepare statement: Not supported type: %v", field.Kind())
+								log.Printf("Prepare statement: Not supported type: %v", field.Kind())
 								return PrepareStatementFailed
 							}
 						}
@@ -111,11 +115,11 @@ func (stm *statement) Execute() {
 		}
 	case StatementTypeInvalid:
 		{
-			fmt.Println("Execute statement error: Invalid statement type")
+			log.Println("Execute statement error: Invalid statement type")
 		}
 	default:
 		{
-			fmt.Printf("Execute statement error: Unhandled statement type: %v\n", stm.typ)
+			log.Printf("Execute statement error: Unhandled statement type: %v\n", stm.typ)
 		}
 	}
 }
@@ -123,21 +127,24 @@ func (stm *statement) Execute() {
 func runSelect(stm *statement) {
 	index, err := strconv.ParseUint(stm.args[1], 10, 64)
 	if err != nil {
-		fmt.Printf("Failed to run select, error parsing row index: %s\n", err)
+		log.Printf("Failed to run select, error parsing row index: %s\n", err)
 	}
 	stm.row.InitCursor(uint32(index))
 	err = stm.row.Load()
 	if err != nil {
-		fmt.Printf("Failed to run select, error loading data: %s\n", err)
+		log.Printf("Failed to run select, error loading data: %s\n", err)
 	}
 }
 
 func runInsert(stm *statement) {
 	index, err := strconv.ParseUint(stm.args[1], 10, 64)
+	if err != nil {
+		log.Fatalf("Failed to parse id: %s", err.Error())
+	}
 	n, err := stm.row.Save(uint32(index))
 	if err != nil {
-		fmt.Printf("Failed to run insert: %s", err.Error())
+		log.Printf("Failed to run insert: %s", err.Error())
 		return
 	}
-	fmt.Printf("Inserted %d bytes to table %s\n", n, stm.row.Table().String())
+	log.Printf("Inserted %d bytes to table %s\n", n, stm.row.Table().String())
 }

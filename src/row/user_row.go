@@ -2,7 +2,7 @@ package row
 
 import (
 	"db/src/datatype"
-	"fmt"
+	"log"
 	"reflect"
 )
 
@@ -23,6 +23,7 @@ func (row *UserRow) Save(index uint32) (n int, err error) {
 	}
 	err = row.Cursor.table.Persist(bytes, row.Cursor.currentPos())
 	if err != nil {
+		log.Println(err.Error())
 		return 0, nil
 	} else {
 		row.Cursor.advance()
@@ -44,7 +45,7 @@ func (row *UserRow) Load() (err error) {
 
 	ptr := (loadedRow).(*UserRow)
 
-	fmt.Printf("Loaded [ ID #%d UserRow: Username-> %s, Email-> %s ]\n", ptr.Id, ptr.Username, ptr.Email)
+	log.Printf("Loaded [ ID #%d UserRow: Username-> %s, Email-> %s ]\n", ptr.Id, ptr.Username, ptr.Email)
 
 	return nil
 }

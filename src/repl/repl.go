@@ -3,6 +3,7 @@ package repl
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
@@ -34,7 +35,7 @@ func Run() {
 			stm := statement{}
 			prepareStatus := prepareStm(&ib, &stm)
 			if prepareStatus == PrepareStatementFailed {
-				fmt.Printf("Failed to prepare statement: %v\n", ib.args)
+				log.Printf("Failed to prepare statement: %v\n", ib.args)
 				continue
 			}
 			stm.Execute()
