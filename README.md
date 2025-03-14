@@ -1,12 +1,13 @@
 # go-db
 A simple database for learning, inspired by https://cstack.github.io/db_tutorial
 
+<img src="./diagram/go-db.svg" width="720">
+
 roadmap:
 - [x] B+Tree
 - [x] Simple insert
 - [x] Simple select
 - [ ] Simple delete
-- [ ] Tidy code
 - [ ] Support duplicate key
 - [ ] Visualize whole tree from db file
 

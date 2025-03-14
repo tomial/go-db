@@ -221,6 +221,7 @@ func (in *InternalNode) split() *InternalNode {
 		in.btree = NewBtree()
 	}
 
+	// spawn right node
 	right := initEmptyInternalNode()
 	right.Header.CellSize = in.Header.CellSize
 	right.Header.Page = PageNum(in.btree.NumNode + 1)
