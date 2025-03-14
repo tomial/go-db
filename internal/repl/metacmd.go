@@ -10,6 +10,7 @@ type MetaCommandResult int
 
 const (
 	MetaCmdTypeExit MetaCommandType = iota
+	MetaCmdHelp
 	MetaCmdTypeUnrecognized
 )
 
@@ -27,10 +28,25 @@ type metaCommand struct {
 	callback func()
 }
 
+func (m *metaCommand) printHelp() {
+	var prompt = `
+	commands:
+	- insert [id] [username] [email]: insert new row [id username email]
+	- select [id]: select the row with [id]
+	- .help: print help
+	- .exit: quit
+	`
+	log.Println(prompt)
+}
+
+func (m *metaCommand) exit() {
+	os.Exit(0)
+}
+
 func executeMetaCmd(ib *inputBuffer) {
 	op := ib.args[0]
 
-	var metacmd metaCommand
+	metacmd := &metaCommand{}
 	metacmd.str = op
 
 	switch op {
@@ -38,9 +54,13 @@ func executeMetaCmd(ib *inputBuffer) {
 		{
 			metacmd.typ = MetaCmdTypeExit
 			metacmd.result = MetaCmdResultPending
-			metacmd.callback = func() {
-				os.Exit(0)
-			}
+			metacmd.callback = metacmd.exit
+		}
+	case ".help":
+		{
+			metacmd.typ = MetaCmdHelp
+			metacmd.result = MetaCmdResultPending
+			metacmd.callback = metacmd.printHelp
 		}
 	default:
 		{
@@ -60,7 +80,5 @@ func executeMetaCmd(ib *inputBuffer) {
 		log.Printf("Failed to execute meta command: %v\n", metacmd.str)
 	case MetaCmdResultUnrecognized:
 		log.Printf("Failed to recognize meta command: %v\n", metacmd.str)
-	default:
-		log.Printf("Unhandled meta command result: %v", metacmd.result)
 	}
 }
