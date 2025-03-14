@@ -1,14 +1,15 @@
 package btree
 
 import (
-	"db/src/constants"
-	"db/src/util"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
 	"reflect"
+
+	"github.com/tomial/go-db/internal/constants"
+	"github.com/tomial/go-db/internal/util"
 )
 
 type internalCell struct {

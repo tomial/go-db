@@ -1,10 +1,11 @@
 package pager
 
 import (
-	"db/src/constants"
 	"io"
 	"log"
 	"os"
+
+	"github.com/tomial/go-db/internal/constants"
 )
 
 type Pager struct {

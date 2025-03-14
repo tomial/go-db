@@ -1,11 +1,12 @@
 package repl
 
 import (
-	"db/src/row"
 	"log"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/tomial/go-db/internal/row"
 )
 
 type StatementType int

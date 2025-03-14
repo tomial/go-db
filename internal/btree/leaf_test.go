@@ -1,11 +1,12 @@
 package btree
 
 import (
-	"db/src/constants"
-	"db/src/util"
 	"encoding/binary"
 	"encoding/hex"
 	"testing"
+
+	"github.com/tomial/go-db/internal/constants"
+	"github.com/tomial/go-db/internal/util"
 )
 
 func TestLeafNodeCellSize(t *testing.T) {

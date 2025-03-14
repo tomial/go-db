@@ -1,10 +1,11 @@
 package row
 
 import (
-	"db/src/datatype"
 	"encoding/binary"
 	"errors"
 	"reflect"
+
+	"github.com/tomial/go-db/internal/datatype"
 )
 
 // TODO return when data count not equal to col num

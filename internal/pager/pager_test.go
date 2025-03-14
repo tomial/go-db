@@ -1,10 +1,11 @@
 package pager
 
 import (
-	"db/src/constants"
 	"io"
 	"os"
 	"testing"
+
+	"github.com/tomial/go-db/internal/constants"
 )
 
 func TestWritePage(t *testing.T) {

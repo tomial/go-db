@@ -1,11 +1,12 @@
 package btree
 
 import (
-	"db/src/constants"
-	"db/src/util"
 	"encoding/binary"
 	"fmt"
 	"reflect"
+
+	"github.com/tomial/go-db/internal/constants"
+	"github.com/tomial/go-db/internal/util"
 )
 
 // A simple b plus tree implementation

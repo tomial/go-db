@@ -1,11 +1,12 @@
 package btree
 
 import (
-	"db/src/constants"
 	"encoding/hex"
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/tomial/go-db/internal/constants"
 )
 
 func TestBTreeStructSize(t *testing.T) {

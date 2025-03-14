@@ -1,7 +1,7 @@
 package row
 
 import (
-	"db/src/storage"
+	"github.com/tomial/go-db/internal/storage"
 )
 
 type Row interface {

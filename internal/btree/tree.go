@@ -1,9 +1,6 @@
 package btree
 
 import (
-	"db/src/constants"
-	"db/src/pager"
-	"db/src/util"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -11,6 +8,10 @@ import (
 	"log"
 	"os"
 	"reflect"
+
+	"github.com/tomial/go-db/internal/constants"
+	"github.com/tomial/go-db/internal/pager"
+	"github.com/tomial/go-db/internal/util"
 )
 
 type key uint32

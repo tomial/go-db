@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"db/src/btree"
 	"errors"
 	"fmt"
+
+	"github.com/tomial/go-db/internal/btree"
 )
 
 type Table struct {

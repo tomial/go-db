@@ -1,9 +1,10 @@
 package row
 
 import (
-	"db/src/datatype"
 	"log"
 	"reflect"
+
+	"github.com/tomial/go-db/internal/datatype"
 )
 
 type UserRow struct {

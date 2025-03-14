@@ -1,9 +1,10 @@
 package btree
 
 import (
-	"db/src/constants"
 	"encoding/hex"
 	"log"
+
+	"github.com/tomial/go-db/internal/constants"
 )
 
 type node interface {

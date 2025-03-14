@@ -1,6 +1,6 @@
 package row
 
-import "db/src/storage"
+import "github.com/tomial/go-db/internal/storage"
 
 type cursor struct {
 	table      *storage.Table

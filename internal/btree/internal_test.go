@@ -1,9 +1,10 @@
 package btree
 
 import (
-	"db/src/constants"
 	"encoding/hex"
 	"testing"
+
+	"github.com/tomial/go-db/internal/constants"
 )
 
 func initInternalNode() *InternalNode {
